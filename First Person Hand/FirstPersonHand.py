@@ -5,10 +5,12 @@ from six.moves import xrange
 from PIL import Image
 from mpl_toolkits.mplot3d import Axes3D
 import time
+from sklearn.cluster import KMeans
+
 boundingBoxSize = 140
 
-dir_points = '/home/haojie/Desktop/FirstPersonHand/points_1/'
-dir_joints = '/home/haojie/Desktop/FirstPersonHand/joints_1/'
+dir_points = '/home/haojie/Desktop/FirstPersonHand/points/'
+dir_joints = '/home/haojie/Desktop/FirstPersonHand/joints/'
 
 
 cam_extr = np.array(
@@ -129,16 +131,16 @@ for subject in list_subject:
             skeleton = np.loadtxt(dir_pose_seq)
             skeleton = skeleton[:, 1:].reshape(skeleton.shape[0], 21, -1)
             num_frames = len(os.listdir(dir_video_seq))
+
             for i in range(num_frames):
                 # fig = plt.figure()
-                # ax = fig.add_subplot(111)
+                # ax = fig.add_subplot(121)
                 # ax = Axes3D(fig)
                 # ax.set_xlabel('X', fontdict={'size': 15, 'color': 'red'})
                 # ax.set_ylabel('Y', fontdict={'size': 15, 'color': 'red'})
                 # ax.set_zlabel('Z', fontdict={'size': 15, 'color': 'red'})
                 #
                 # ax.view_init(-90, -90)
-
                 frame = dir_video_seq+'depth_{:04d}.png'.format(i)
                 # print(frame)
                 img = Image.open(frame)
@@ -152,20 +154,45 @@ for subject in list_subject:
                 skel_hom2d = np.array(cam_intr).dot(skel_camcoords.transpose()).transpose()
                 skel_proj = (skel_hom2d / skel_hom2d[:, 2:])[:, :2]
                 # print(skel_proj)
-                invalidIndices = np.logical_or(np.logical_or(np.logical_or(skel_proj[:, 0]>640, skel_proj[:, 1]>480), skel_proj[:, 0]<0), skel_proj[:, 1]<0)
-                # print(np.sum(invalidIndices))
+                invalidIndices = np.logical_or(np.logical_or(np.logical_or(skel_proj[:, 0]>639, skel_proj[:, 1]>479), skel_proj[:, 0]<0), skel_proj[:, 1]<0)
+
                 if np.sum(invalidIndices)>2:
-                    #plt.close(fig)
+                    # plt.close(fig)
                     continue
-                tl_u = int(np.maximum(np.min(np.floor(skel_proj[:, 0]))-50, 0))
-                tl_v = int(np.maximum(np.min(np.floor(skel_proj[:, 1]))-50, 0))
-                br_u = int(np.minimum(np.max(np.floor(skel_proj[:, 0]))+50, 640))
-                br_v = int(np.minimum(np.max(np.floor(skel_proj[:, 1]))+50, 480))
+                tl_u = np.min(skel_proj[:, 0])
+                tl_v = np.min(skel_proj[:, 1])
+                br_u = np.max(skel_proj[:, 0])
+                br_v = np.max(skel_proj[:, 1])
+                u_center = 0.5 * (tl_u + br_u)
+                v_center = 0.5 * (tl_v + br_v)
+                width = (br_u - u_center) * 1.4
+                height = (br_v - v_center) * 1.4
+                tl_u = int(np.maximum(np.min(np.floor(u_center - width)), 0))
+                tl_v = int(np.maximum(np.min(np.floor(v_center - height)), 0))
+                br_u = int(np.minimum(np.min(np.floor(u_center + width)), 639))
+                br_v = int(np.minimum(np.min(np.floor(v_center + height)), 479))
+                # tl_u = int(np.maximum(np.min(np.floor(skel_proj[:, 0]))-50, 0))
+                # tl_v = int(np.maximum(np.min(np.floor(skel_proj[:, 1]))-50, 0))
+                # br_u = int(np.minimum(np.max(np.floor(skel_proj[:, 0]))+50, 640))
+                # br_v = int(np.minimum(np.max(np.floor(skel_proj[:, 1]))+50, 480))
+
+                u_center_floor = np.floor(u_center)
+                v_center_floor = np.floor(v_center)
+
+
+                depthvalue = img[int(v_center_floor), int(u_center_floor)]
+
+                offset = np.zeros(3)
+                # offset[0] = (u_center_floor + 0.5 - u0) * depthvalue / f_x
+
+                # offset[1] = (v_center_floor + 0.5 - v0) * depthvalue / f_y
 
                 img = img[tl_v:br_v, tl_u:br_u]
+                # ax1 = fig.add_subplot(122)
+                # ax1.imshow(img, cmap='gray')
+                img[np.where(img == 0)] = np.max(img)
                 pixel = np.empty((3, img.size))
                 pixel[2, :] = img.ravel(1)
-                # print(img)
                 # ax.imshow(img, cmap='gray')
                 a, b = np.meshgrid(np.arange(tl_u, br_u), np.arange(tl_v, br_v))
                 pixel[0, :] = a.ravel(1)
@@ -186,18 +213,36 @@ for subject in list_subject:
                 # print(time.time() - starttime)
                 # print(offset)
                 # print(skel_camcoords)
-                # print(points[:100, :])
-
+                # randInidices = np.arange(len(points))
+                # np.random.shuffle(randInidices)
+                # points = points[randInidices[:400], :]
+                label = KMeans(n_clusters=2, init=np.reshape([1000, np.mean(points[:, 2])], [-1, 1])).fit_predict(points[:, 2].reshape(-1, 1))
+                temp = points[label.astype(bool)]
+                offset[2] = np.mean(temp[:, 2])
+                # fig = plt.figure()
+                # ax = Axes3D(fig)
+                # ax.set_xlabel('X', fontdict={'size': 15, 'color': 'red'})
+                # ax.set_ylabel('Y', fontdict={'size': 15, 'color': 'red'})
+                # ax.set_zlabel('Z', fontdict={'size': 15, 'color': 'red'})
+                #
+                # ax.view_init(-90, -90)
+                # color = ('red', 'green')
+                # colors = np.array(color)[label]
+                #
+                # ax.scatter(points[:, 0], points[:, 1], points[:, 2], c=colors)
+                # plt.show()
                 _, points, skel_camcoords = viewCorrection(np.mean(skel_camcoords, axis=0), points, skel_camcoords)
 
-                offset = skel_camcoords[3]
+                # print(offset)
                 points -= offset
                 skel_camcoords -= offset
+                # print(np.mean(skel_camcoords, axis=0))
 
                 validIndicies = np.logical_and(np.logical_and(np.abs(points[:, 0]) < boundingBoxSize, np.abs(points[:, 1]) < boundingBoxSize), np.abs(points[:, 2]) < boundingBoxSize)
                 points = points[validIndicies, :]
-
+                # print(len(points))
                 if len(points) < 5000:
+                    # plt.close(fig)
                     continue
                 while len(points) < 6000:
                     points = np.repeat(points, 2, axis=0)

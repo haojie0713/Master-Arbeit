@@ -8,7 +8,7 @@ dir_joints = '/home/haojie/Desktop/FirstPerson/joints/'
 
 
 def bytes_feature(value):
-    return tf.train.Feature(bytes_list=tf.train.BytesList(value=value.tobytes()))
+    return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value.tobytes()]))
 
 
 list_points = glob.glob('/home/haojie/Desktop/FirstPersonHand/points/*.npy')
@@ -29,4 +29,6 @@ for points in list_points:
     features = {'pointCloud': bytes_feature(points), 'joint': bytes_feature(joints), 'handScale': bytes_feature(np.array([1.0]).astype(np.float32))}
     example = tf.train.Example(features=tf.train.Features(feature=features))
     writer.write(example.SerializeToString())
+    if counter == 1000:
+        break
 writer.close()

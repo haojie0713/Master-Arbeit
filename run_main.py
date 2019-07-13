@@ -29,7 +29,7 @@ def parse_args():
 
     parser.add_argument('--validation_size', type=int, default=6400, help='Validation data size (number of images).')
 
-    parser.add_argument('--test_size', type=int, default=30000, help='Validation data size (number of images).')  #101641
+    parser.add_argument('--test_size', type=int, default=1000, help='Validation data size (number of images).')  #101641
 
     parser.add_argument('--log_dir', type=str, default='/home/haojie/Desktop/MyCode/log', help='Directory to put the log data.')
 
