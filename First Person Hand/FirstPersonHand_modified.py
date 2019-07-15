@@ -107,9 +107,9 @@ for subject in list_subject:
                 img_cropped = img[int(tl_v):int(br_v), int(tl_u):int(br_u)]
 
                 # get 3D center (center of bounding box + centerDepth --> transformed to 3D camera cooordinates)
-                img_cropped[np.where(img == 0)] = np.max(img_cropped)+1
+                img_cropped[np.where(img_cropped == 0)] = np.max(img_cropped)+1
                 depths = img_cropped.reshape(-1, 1)
-                label = KMeans(n_clusters=2, init=np.reshape([np.max(img_cropped)+1, np.min(img_cropped)], [-1,1]), n_init=100).fit_predict(depths)
+                label = KMeans(n_clusters=2, init=np.reshape([np.max(img_cropped)+1, np.min(img_cropped)], [-1,1]), n_init=1).fit_predict(depths)
                 centerDepth = np.mean(depths[label.astype(bool)])
                 if np.abs(centerDepth-skel_camcoords[3, 2]) > 100:
                     centerDepth = skel_camcoords[3, 2]
@@ -129,21 +129,19 @@ for subject in list_subject:
 
                 # view correction
                 rotMat = viewCorrection(center3D)
-                # cloud = np.matmul(cloud, np.transpose(viewRotation))
                 center3Drot = np.matmul(center3D.reshape(1, -1), rotMat)
                 joints = np.matmul(skel_camcoords, rotMat) - center3Drot
 
                 # padding and cropping image
-                padSize = 500
+                padSize = 900
                 img_pad = np.pad(img, ((padSize, padSize),(padSize, padSize)), 'constant')
                 us = int(cropStart[0]+padSize)
                 ue = int(cropEnd[0]+padSize)
                 vs = int(cropStart[1]+padSize)
                 ve = int(cropEnd[1]+padSize)
                 image = img_pad[vs:ve, us:ue]
-
                 # project to 3D camera coordinates
-                a, b = np.meshgrid(np.arange(us, ue), np.arange(vs, ve))
+                a, b = np.meshgrid(np.arange(np.floor(cropStart[0]), np.floor(cropEnd[0])), np.arange(np.floor(cropStart[1]), np.floor(cropEnd[1])))
                 u = a.ravel(1)
                 v = b.ravel(1)
                 d = image.ravel(1)
@@ -165,8 +163,7 @@ for subject in list_subject:
                     points = np.repeat(points, 2, axis=0)
                 randInidices = np.arange(len(points))
                 np.random.shuffle(randInidices)
-                final_points = points[randInidices[:6000], :]
-                final_points = final_points  # mm
+                final_points = points[randInidices[:6000], :]  # mm
 
                 final_joints = joints * 0.001  # mm->m
                 np.save(dir_points + str(counter) + '.npy', final_points)
