@@ -138,6 +138,6 @@ def parse_function_test(example_proto):
 
     # preprocess points
     points_occluded_dec, joint_dec = tf.py_func(preprocessPoint_test, [points_dec, joint_dec], [tf.float32, tf.float32])
-    return points_occluded_dec, tf.zeros([INPUT_POINT_SIZE, 3]), joint_dec, handScale_dec, tf.zeros([INPUT_POINT_SIZE, 3]), tf.zeros([80, 80])
+    return points_occluded_dec, tf.zeros([INPUT_POINT_SIZE, 3], dtype=tf.float32), joint_dec, handScale_dec, tf.zeros([INPUT_POINT_SIZE, 3], dtype=tf.float32), tf.zeros([80, 80], dtype=tf.float32)
 
 

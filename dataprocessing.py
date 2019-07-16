@@ -93,7 +93,7 @@ def augmentation(points, joints):
     R_x = np.array([[1, 0, 0], [0, math.cos(theta[0]), -math.sin(theta[0])], [0, math.sin(theta[0]), math.cos(theta[0])]])
     R_y = np.array([[math.cos(theta[1]), 0, math.sin(theta[1])], [0, 1, 0], [-math.sin(theta[1]), 0, math.cos(theta[1])]])
     R_z = np.array([[math.cos(theta[2]), -math.sin(theta[2]), 0], [math.sin(theta[2]), math.cos(theta[2]), 0], [0, 0, 1]])
-    scale = np.float32(np.maximum(np.minimum(np.random.normal(0.9, 0.5), 1.3), 0.5)) / object_max_dis
+    scale = np.float32(np.maximum(np.minimum(np.random.normal(0.9, 0.3), 1.3), 0.5)) / object_max_dis
     R_scaled = np.dot(np.dot(R_z, R_y), R_x) * scale
     object_points = np.dot(object_points, np.transpose(R_scaled))
 
@@ -106,6 +106,32 @@ def augmentation(points, joints):
 
     # combine
     occluded_pcd = np.concatenate((object_points, points))
+
+    if np.random.rand() < 0.4:
+        # get an object randomly
+        object_points, object_center, object_max_dis = get_an_object()
+        object_points -= object_center
+
+        # rotation & scaling
+        theta = -math.pi + 2 * math.pi * np.random.rand(3)
+        R_x = np.array(
+            [[1, 0, 0], [0, math.cos(theta[0]), -math.sin(theta[0])], [0, math.sin(theta[0]), math.cos(theta[0])]])
+        R_y = np.array(
+            [[math.cos(theta[1]), 0, math.sin(theta[1])], [0, 1, 0], [-math.sin(theta[1]), 0, math.cos(theta[1])]])
+        R_z = np.array(
+            [[math.cos(theta[2]), -math.sin(theta[2]), 0], [math.sin(theta[2]), math.cos(theta[2]), 0], [0, 0, 1]])
+        scale = np.float32(np.maximum(np.minimum(np.random.normal(0.4, 0.2), 0.6), 0.2)) / object_max_dis
+        R_scaled = np.dot(np.dot(R_z, R_y), R_x) * scale
+        object_points_1 = np.dot(object_points, np.transpose(R_scaled))
+
+        # translation(location)
+        joints_center = joints.reshape(21, 3)[choice([8, 11, 14, 17, 20])]
+        d_xyz = np.random.normal(joints_center, 0.3)
+        d_xyz = np.float32(np.maximum(np.minimum(d_xyz, boundingBoxSize), -boundingBoxSize))
+        object_points_1 += d_xyz
+
+        # combine
+        occluded_pcd = np.concatenate((object_points_1, occluded_pcd))
 
     # projection to depth image
     occluded_pcd += np.array([0, 0, 19])
@@ -142,28 +168,60 @@ def augmentation_extra(points, joints):
     # get an object randomly
     object_points, object_center, object_max_dis = get_an_object_extra()
     object_points -= object_center
+    object_points[:, 2] = 0
 
     # rotation & scaling
-    theta = -math.pi + 2 * math.pi * np.random.rand(3)
+    theta = np.zeros(3)
+    theta[2] = -math.pi + 2 * math.pi * np.random.rand(1)
+    theta[0] = (np.random.random()-0.5) * 2 * 0.13
+    theta[1] = (np.random.random() - 0.5) * 2 * 0.13
     R_x = np.array(
         [[1, 0, 0], [0, math.cos(theta[0]), -math.sin(theta[0])], [0, math.sin(theta[0]), math.cos(theta[0])]])
     R_y = np.array(
         [[math.cos(theta[1]), 0, math.sin(theta[1])], [0, 1, 0], [-math.sin(theta[1]), 0, math.cos(theta[1])]])
     R_z = np.array(
         [[math.cos(theta[2]), -math.sin(theta[2]), 0], [math.sin(theta[2]), math.cos(theta[2]), 0], [0, 0, 1]])
-    scale = np.float32(np.maximum(np.minimum(np.random.normal(0.9, 0.5), 1.5), 0.6)) / object_max_dis
+    scale = np.float32(np.maximum(np.minimum(np.random.normal(0.9, 0.3), 1.5), 0.6)) / object_max_dis
     R_scaled = np.dot(np.dot(R_z, R_y), R_x) * scale
     object_points = np.dot(object_points, np.transpose(R_scaled))
 
     # translation(location)
     # joints_center = np.mean(joints.reshape(21, 3), axis=0)
-    joints_center = joints.reshape(21, 3)[choice([8, 11, 14, 17, 20])]
-    d_xyz = np.random.normal(joints_center, 0.25)
+    joints_center = joints.reshape(21, 3)[choice([18, 19, 20, 17, 16, 14])]
+    d_xyz = np.random.normal(joints_center, 0.08)
+    d_xyz[2] += 0.08 # np.random.normal(joints_center, 0.25)
     d_xyz = np.float32(np.maximum(np.minimum(d_xyz, boundingBoxSize), -boundingBoxSize))
     object_points += d_xyz
 
     # combine
     occluded_pcd = np.concatenate((object_points, points))
+
+    if np.random.rand() < 0.4:
+        # get an object randomly
+        object_points, object_center, object_max_dis = get_an_object()
+        object_points -= object_center
+
+        # rotation & scaling
+        theta = -math.pi + 2 * math.pi * np.random.rand(3)
+        R_x = np.array(
+            [[1, 0, 0], [0, math.cos(theta[0]), -math.sin(theta[0])], [0, math.sin(theta[0]), math.cos(theta[0])]])
+        R_y = np.array(
+            [[math.cos(theta[1]), 0, math.sin(theta[1])], [0, 1, 0], [-math.sin(theta[1]), 0, math.cos(theta[1])]])
+        R_z = np.array(
+            [[math.cos(theta[2]), -math.sin(theta[2]), 0], [math.sin(theta[2]), math.cos(theta[2]), 0], [0, 0, 1]])
+        scale = np.float32(np.maximum(np.minimum(np.random.normal(0.4, 0.2), 0.6), 0.2)) / object_max_dis
+        R_scaled = np.dot(np.dot(R_z, R_y), R_x) * scale
+        object_points_1 = np.dot(object_points, np.transpose(R_scaled))
+
+        # translation(location)
+        joints_center = joints.reshape(21, 3)[choice([12, 13, 16, 19, 15, 18, 4, 5])]
+        d_xyz_1 = np.random.normal(joints_center, 0.3)
+        d_xyz_1[2] = np.minimum(d_xyz_1[2], d_xyz[2])
+        d_xyz_1 = np.float32(np.maximum(np.minimum(d_xyz_1, boundingBoxSize), -boundingBoxSize))
+        object_points_1 += d_xyz_1
+
+        # combine
+        occluded_pcd = np.concatenate((object_points_1, occluded_pcd))
 
     # projection to depth image
     occluded_pcd += np.array([0, 0, 19])

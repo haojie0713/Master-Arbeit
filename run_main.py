@@ -15,11 +15,11 @@ def parse_args():
     desc = "Tensorflow implementation of 'Augmented Autoencoder'"
     parser = argparse.ArgumentParser(description=desc)
 
-    parser.add_argument('--learning_rate', type=float, default=0.00001, help='Initial learning rate.')
+    parser.add_argument('--learning_rate', type=float, default=0.0001, help='Initial learning rate.')
 
     parser.add_argument('--batch_size', type=int, default=10, help='Batch size.')
 
-    parser.add_argument('--start_step', type=int, default=3887001, help='Training step to start with.')
+    parser.add_argument('--start_step', type=int, default=3989001, help='Training step to start with.')
 
     parser.add_argument('--max_step', type=int, default=180000000000, help='Number of steps to run trainer.')
 
@@ -49,7 +49,7 @@ def main(_):
     training_var = tf.placeholder(tf.bool)
 
     points_occluded, points_clean, joints, object, depth_image, training_iterator, validation_iterator, test_iterator = \
-        create_datasets_boxnet(training_filenames, validation_filenames, test_filenames, handle, FLAGS.batch_size, 8, 8000)
+        create_datasets_boxnet(training_filenames, validation_filenames, test_filenames, handle, FLAGS.batch_size, 8, 3000)
 
     latent_mean, latent_stddev, scores = encoder_rPEL(points_occluded, training_var) # !!!!!!!!!!!!!!!points_occluded => points_clean
 
@@ -145,7 +145,7 @@ def main(_):
             # saver1 = tf.train.Saver(var_list=vars_filter, max_to_keep=2)
             # saver1.restore(sess, checkpoint_file)
 
-            checkpoint_file = '/home/haojie/Desktop/MyCode/log/model.ckpt-3887000'
+            checkpoint_file = '/home/haojie/Desktop/MyCode/log/model.ckpt-3989000'
             saver.restore(sess, checkpoint_file)
 
             # print('**INFERENCE ==> VALIDATION**')

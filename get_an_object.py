@@ -5,6 +5,7 @@ from random import choice
 import re
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+import math
 
 
 def get_an_object():
@@ -51,10 +52,16 @@ def get_an_object_extr():
         filename = dir_offset+ss
         npy_filename = re.sub('.json', '.npy', filename)
         points = np.load(npy_filename)
-        # with open(re.sub('.npy', '.json', npy_filename)) as f:
-        #     dict = json.load(f)
-        #     center = np.array(dict["centroid"], dtype=np.float32)
+        with open(re.sub('.npy', '.json', npy_filename)) as f:
+            dict = json.load(f)
+            center = np.array(dict["centroid"], dtype=np.float32)
         #     max_dis = np.array(dict["max_dis"], dtype=np.float32)
+        points -= center
+        points[:, 2] = 0
+        theta = np.arctan(0.13)
+        R_x = np.array(
+            [[1, 0, 0], [0, math.cos(theta), -math.sin(theta)], [0, math.sin(theta), math.cos(theta)]])
+        points = np.dot(points, R_x.T)
         fig = plt.figure()
         ax = Axes3D(fig)
         ax.set_xlabel('X', fontdict={'size': 15, 'color': 'red'})
@@ -66,5 +73,5 @@ def get_an_object_extr():
         ax.scatter(points[:, 0], points[:, 1], points[:, 2], marker='o', s=15, alpha=1)
         plt.show()
 
-#
+# #
 # get_an_object_extr()
