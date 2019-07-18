@@ -181,13 +181,14 @@ def augmentation_extra(points, joints):
         [[math.cos(theta[1]), 0, math.sin(theta[1])], [0, 1, 0], [-math.sin(theta[1]), 0, math.cos(theta[1])]])
     R_z = np.array(
         [[math.cos(theta[2]), -math.sin(theta[2]), 0], [math.sin(theta[2]), math.cos(theta[2]), 0], [0, 0, 1]])
-    scale = np.float32(np.maximum(np.minimum(np.random.normal(0.9, 0.3), 1.5), 0.6)) / object_max_dis
+    scale = np.float32(np.maximum(np.minimum(np.random.normal(1.1, 0.3), 1.5), 0.6)) / object_max_dis
     R_scaled = np.dot(np.dot(R_z, R_y), R_x) * scale
     object_points = np.dot(object_points, np.transpose(R_scaled))
 
     # translation(location)
     # joints_center = np.mean(joints.reshape(21, 3), axis=0)
-    joints_center = joints.reshape(21, 3)[choice([18, 19, 20, 17, 16, 14])]
+    joints = joints.reshape(21, 3)
+    joints_center = np.squeeze(joints[np.where(joints[:, 2]==np.max(joints[:, 2]))])
     d_xyz = np.random.normal(joints_center, 0.08)
     d_xyz[2] += 0.08 # np.random.normal(joints_center, 0.25)
     d_xyz = np.float32(np.maximum(np.minimum(d_xyz, boundingBoxSize), -boundingBoxSize))

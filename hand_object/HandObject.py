@@ -19,6 +19,9 @@ cropDepthPlus = 235  # 135+100
 dir_image = '/home/haojie/Desktop/hand_object/images/'
 dir_BBox = '/home/haojie/Desktop/hand_object/BoundingBox.txt'
 dir_points = '/home/haojie/Desktop/hand_object/points/'
+dir_rotMat = '/home/haojie/Desktop/hand_object/rotMat/'
+dir_center3Drot = '/home/haojie/Desktop/hand_object/center3Drot/'
+
 
 def rot_x(rot_angle):
     cosAngle = np.cos(rot_angle)
@@ -59,6 +62,7 @@ def viewCorrection(center3D):
     return np.transpose(viewRotation)
 
 
+# counter = 0
 with open(dir_BBox) as f:
     for line in f.readlines():
         line = line.split()
@@ -66,9 +70,9 @@ with open(dir_BBox) as f:
         pose = np.array(line[1:], dtype=np.float).reshape(2, 2)
         img = np.array(Image.open(dir_image+name))
 
-        # fig = plt.figure()
-        # ax = fig.add_subplot(111)
-        # ax.imshow(frame, cmap='gray')
+        # fig1 = plt.figure()
+        # ax1 = fig1.add_subplot(111)
+        # ax1.imshow(img, cmap='gray')
         # tl_u = pose[0, 0]
         # tl_v = pose[0, 1]
         # br_u = pose[1, 0]
@@ -113,7 +117,8 @@ with open(dir_BBox) as f:
         ue = int(cropEnd[0] + padSize)
         vs = int(cropStart[1] + padSize)
         ve = int(cropEnd[1] + padSize)
-        image = img_pad[vs:ve, us:ue]
+        image = img_pad[vs:ve, us:ue].astype(np.float)
+        image[np.where(image==0)] = np.inf
 
         # project to 3D camera coordinates
         a, b = np.meshgrid(np.arange(np.floor(cropStart[0]), np.floor(cropEnd[0])), np.arange(np.floor(cropStart[1]), np.floor(cropEnd[1])))
@@ -129,7 +134,10 @@ with open(dir_BBox) as f:
         # keep points in bounding box
         points = points[points[:, 2] < center3D[2] + cropDepthPlus * 1.4]
         points = points[points[:, 2] > center3D[2] - cropDepthPlus * 1.4]
+
         points = np.matmul(points, rotMat) - center3Drot
+        validIndicies = np.logical_and(np.logical_and(np.abs(points[:, 0]) < 140, np.abs(points[:, 1]) < 140), np.abs(points[:, 2]) < 140)
+        points = points[validIndicies, :]
 
         # sample points
         if len(points) < 5000:
@@ -140,17 +148,32 @@ with open(dir_BBox) as f:
         np.random.shuffle(randInidices)
         final_points = points[randInidices[:6000], :]  # mm
 
-        # fig = plt.figure()
+        # fig2 = plt.figure()
+        # pose = np.load('/home/haojie/Desktop/hand_object/pose.npy')
+        # joints = pose[counter].reshape(-1, 3)
+        # ax2 = fig2.add_subplot(111)
+        # ax2 = Axes3D(fig2)
+        # ax2.set_xlabel('X', fontdict={'size': 15, 'color': 'red'})
+        # ax2.set_ylabel('Y', fontdict={'size': 15, 'color': 'red'})
+        # ax2.set_zlabel('Z', fontdict={'size': 15, 'color': 'red'})
+        # ax2.view_init(-90, -90)
+        # ax2.scatter(final_points[:, 0], final_points[:, 1], final_points[:, 2], c='b', marker='o', s=1, alpha=1)
         #
-        # ax = fig.add_subplot(111)
-        # ax = Axes3D(fig)
-        # ax.set_xlabel('X', fontdict={'size': 15, 'color': 'red'})
-        # ax.set_ylabel('Y', fontdict={'size': 15, 'color': 'red'})
-        # ax.set_zlabel('Z', fontdict={'size': 15, 'color': 'red'})
-        # ax.view_init(-90, -90)
-        # ax.scatter(final_points[:, 0], final_points[:, 1], final_points[:, 2], c='b', marker='o', s=15, alpha=1)
+        # for i in range(6):
+        #     k = np.mod(i + 1, 6)
+        #     ax2.plot([joints[i, 0], joints[k, 0]], [joints[i, 1], joints[k, 1]], [joints[i, 2], joints[k, 2]], color='y',
+        #             marker='*')
+        # for j in xrange(1, 6):
+        #     q = 3 * (j + 1)
+        #     ax2.plot([joints[j, 0], joints[q, 0]], [joints[j, 1], joints[q, 1]], [joints[j, 2], joints[q, 2]], color='y',
+        #             marker='*')
+        #     for m in range(2):
+        #         ax2.plot([joints[q + m, 0], joints[q + m + 1, 0]], [joints[q + m, 1], joints[q + m + 1, 1]],
+        #                 [joints[q + m, 2], joints[q + m + 1, 2]], color='y', marker='*')
+        #
         # plt.show()
-
-
-        np.save(dir_points + name[:-4], final_points)
+        # counter += 1
+        np.save(dir_rotMat + name[:-4] + '.npy', rotMat)
+        np.save(dir_center3Drot + name[:-4] + '.npy', center3Drot)
+        np.save(dir_points + name[:-4] + '.npy', final_points)
 
