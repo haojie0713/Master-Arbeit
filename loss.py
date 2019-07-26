@@ -28,7 +28,7 @@ def approx_match(xyz1, xyz2):
 ops.NoGradient('ApproxMatch')
 
 
-def match_cost(xyz1, xyz2, match):
+def match_cost(xyz1, xyz2, match, label):
     '''
     input:
     xyz1 : batch_size * #dataset_points * 3
@@ -37,7 +37,7 @@ def match_cost(xyz1, xyz2, match):
     returns:
     cost : batch_size
     '''
-    return approxmatch_module.match_cost(xyz1, xyz2, match)
+    return tf.multiply(approxmatch_module.match_cost(xyz1, xyz2, match), tf.squeeze(label))
 
 
 @tf.RegisterGradient('MatchCost')
@@ -71,26 +71,28 @@ def _nn_distance_grad(op,grad_dist1,grad_idx1,grad_dist2,grad_idx2):
     return nn_distance_module.nn_distance_grad(xyz1, xyz2, grad_dist1, idx1, grad_dist2, idx2)
 
 
-def loss_net_point_reconstruction1(points_out, points_clean, batch_size):
+def loss_net_point_reconstruction1(points_out, points_clean, batch_size, label):
     """ Approxmiate algorithm for computing the Earth Mover's Distance.
 
     Original author: Haoqiang Fan
     Modified by Charles R. Qi
     """
     match = approx_match(points_out, points_clean)
-    loss = tf.reduce_sum(match_cost(points_out, points_clean, match))/batch_size/OUTPUT_POINT_SIZE
+    loss = tf.reduce_sum(match_cost(points_out, points_clean, match, label))/tf.reduce_sum(label)/OUTPUT_POINT_SIZE
     tf.summary.scalar('loss point reconstruction (EMD)', loss)
     return loss  # Earth Mover Distance (point euclidean loss)
 
 
-def loss_net_point_reconstruction2(points_out, points_clean, batch_size):
+def loss_net_point_reconstruction2(points_out, points_clean, batch_size, label):
     """ Compute Chamfer's Distance.
 
     Original author: Haoqiang Fan.
     Modified by Charles R. Qi
     """
     dist1, _, dist2, _ = nn_distance(points_out, points_clean)
-    loss = (tf.reduce_sum(dist1)+tf.reduce_sum(dist2))/batch_size/OUTPUT_POINT_SIZE
+    dist1 = tf.multiply(tf.reduce_sum(dist1, axis=1), tf.squeeze(label))
+    dist2 = tf.multiply(tf.reduce_sum(dist2, axis=1), tf.squeeze(label))
+    loss = (tf.reduce_sum(dist1)+tf.reduce_sum(dist2))/tf.reduce_sum(label)/OUTPUT_POINT_SIZE
     tf.summary.scalar('loss point reconstruction (CD)', loss)
     return loss  # Chamfer Distance (point euclidean loss)
 

@@ -1,20 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
-import os
-from six.moves import xrange
-from PIL import Image
-from mpl_toolkits.mplot3d import Axes3D
-import time
-from sklearn.cluster import KMeans
-
-
-u0 = 315.944855
-v0 = 245.287079
-f_x = 475.065948
-f_y = 475.065857
-
-cropSizePlus = 185.625  # 135*1.375
-cropDepthPlus = 235  # 135+100
 
 dir_pose = '/home/haojie/Desktop/hand_object/pose.npy'
 dir_rotMat = '/home/haojie/Desktop/hand_object/rotMat/'

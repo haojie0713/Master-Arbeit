@@ -15,11 +15,11 @@ def parse_args():
     desc = "Tensorflow implementation of 'Augmented Autoencoder'"
     parser = argparse.ArgumentParser(description=desc)
 
-    parser.add_argument('--learning_rate', type=float, default=0.0001, help='Initial learning rate.')
+    parser.add_argument('--learning_rate', type=float, default=0.00001, help='Initial learning rate.')
 
     parser.add_argument('--batch_size', type=int, default=10, help='Batch size.')
 
-    parser.add_argument('--start_step', type=int, default=3989001, help='Training step to start with.')
+    parser.add_argument('--start_step', type=int, default=4263001, help='Training step to start with.')
 
     parser.add_argument('--max_step', type=int, default=180000000000, help='Number of steps to run trainer.')
 
@@ -48,8 +48,12 @@ def main(_):
     handle = tf.placeholder(tf.string, shape=[])
     training_var = tf.placeholder(tf.bool)
 
-    points_occluded, points_clean, joints, object, depth_image, training_iterator, validation_iterator, test_iterator = \
+    points_occluded, points_clean, joints, object, depth_image, label, training_iterator, validation_iterator, test_iterator = \
         create_datasets_boxnet(training_filenames, validation_filenames, test_filenames, handle, FLAGS.batch_size, 8, 3000)
+
+    while not any(label):    # insure there are clean hand samples in current batch
+        points_occluded, points_clean, joints, object, depth_image, label, training_iterator, validation_iterator, test_iterator = \
+            create_datasets_boxnet(training_filenames, validation_filenames, test_filenames, handle, FLAGS.batch_size, 8, 3000)
 
     latent_mean, latent_stddev, scores = encoder_rPEL(points_occluded, training_var) # !!!!!!!!!!!!!!!points_occluded => points_clean
 
@@ -59,8 +63,8 @@ def main(_):
     pose_out = decoder_pose(z, training_var)
 
     loss_kl = KL_divergence(latent_mean, latent_stddev, FLAGS.batch_size)
-    loss_point_reconstruction1 = loss_net_point_reconstruction1(points_out, points_clean, FLAGS.batch_size) # EM loss
-    loss_point_reconstruction2 = loss_net_point_reconstruction2(points_out, points_clean, FLAGS.batch_size) # Chamfer loss
+    loss_point_reconstruction1 = loss_net_point_reconstruction1(points_out, points_clean, FLAGS.batch_size, label) # EM loss
+    loss_point_reconstruction2 = loss_net_point_reconstruction2(points_out, points_clean, FLAGS.batch_size, label) # Chamfer loss
     loss_point_reconstruction = loss_point_reconstruction1+loss_point_reconstruction2
     tf.summary.scalar('loss point reconstruction', loss_point_reconstruction)
     loss_pose_estimation = loss_net_pose_estimation(pose_out, joints, FLAGS.batch_size)
@@ -105,7 +109,7 @@ def main(_):
     if FLAGS.run_mode == 'inference':
         # restore
         print('Model is being restored...')
-        checkpoint_file = '/home/haojie/Desktop/MyCode/log/model.ckpt-4003000'
+        checkpoint_file = '/home/haojie/Desktop/MyCode/log/model.ckpt-4323000'
         saver.restore(sess, checkpoint_file)
 
         # print('**INFERENCE ==> VALIDATION**')
@@ -117,19 +121,19 @@ def main(_):
     elif FLAGS.run_mode == 'inference_result':
         # restore
         print('Model is being restored...')
-        checkpoint_file = '/home/haojie/Desktop/MyCode/log'
+        checkpoint_file = '/home/haojie/Desktop/MyCode/log/model.ckpt-4323000'
         saver.restore(sess, checkpoint_file)
 
         # print('**INFERENCE ==> TEST**')
-        # inference_test_result(sess, points_out, pose_out, loss_kl, loss_point_reconstruction, loss_pose_estimation, loss_all, handle, test_handle, training_var, test_steps)
+        inference_test_result(sess, pose_out, handle, test_handle, training_var, test_steps)
     elif FLAGS.run_mode == 'visualization':
         # restore
         print('Model is being restored...')
-        checkpoint_file = '/home/haojie/Desktop/MyCode/log/model.ckpt-4003000'
+        checkpoint_file = '/home/haojie/Desktop/MyCode/log/model.ckpt-4323000'
         saver.restore(sess, checkpoint_file)
 
         # offline_visualization(sess, points_occluded, points_clean, joints, object, depth_image, points_out, pose_out, scores, handle, validation_handle, training_var, FLAGS.batch_size, 10)
-        offline_visualization_FirstPersonHand(sess, points_occluded, joints, points_out, pose_out, scores, handle, test_handle, training_var, FLAGS.batch_size, 100)
+        offline_visualization_FirstPersonHand(sess, points_occluded, joints, points_out, pose_out, scores, handle, test_handle, training_var, FLAGS.batch_size, 50)
         print('Vidualization data are completely generated!')
     else:
         if FLAGS.run_mode == 'training':
@@ -145,7 +149,7 @@ def main(_):
             # saver1 = tf.train.Saver(var_list=vars_filter, max_to_keep=2)
             # saver1.restore(sess, checkpoint_file)
 
-            checkpoint_file = '/home/haojie/Desktop/MyCode/log/model.ckpt-3989000'
+            checkpoint_file = '/home/haojie/Desktop/MyCode/log/model.ckpt-4263000'
             saver.restore(sess, checkpoint_file)
 
             # print('**INFERENCE ==> VALIDATION**')

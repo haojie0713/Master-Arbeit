@@ -36,9 +36,8 @@ def dataset_filenames(data_dir):
                           "Hands2017TrainPointCloud_31",
                           "Hands2017TrainPointCloud_32"
                           ]
-    validation_filenames = ["Hands2017TrainPointCloud_30",
-                            "Hands2017TrainPointCloud_31"]
-    test_filenames = ["FirstPersonHand_1"]
+    validation_filenames = ["Hands2017TrainPointCloud_31"]
+    test_filenames = ["HandObject"]
     # test_filenames = ["FirstPersonHand_1",
     #                   "FirstPersonHand_2",
     #                   "FirstPersonHand_3",
@@ -71,14 +70,14 @@ def create_datasets_boxnet(training_filenames, validation_filenames, test_filena
 
     # Create a feedable iterator to consume data
     iterator = tf.data.Iterator.from_string_handle(handle, training_dataset.output_types, training_dataset.output_shapes)
-    next_occluded_points, next_clean_points, next_joints, next_scales, next_object, next_depth_image = iterator.get_next()
+    next_occluded_points, next_clean_points, next_joints, next_scales, next_object, next_depth_image, next_label = iterator.get_next()
 
     # Define the different iterators
     training_iterator = training_dataset.make_one_shot_iterator()
     validation_iterator = validation_dataset.make_initializable_iterator()
     test_iterator = test_dataset.make_initializable_iterator()
 
-    return next_occluded_points, next_clean_points, next_joints, next_object, next_depth_image, training_iterator, validation_iterator, test_iterator
+    return next_occluded_points, next_clean_points, next_joints, next_object, next_depth_image, next_label, training_iterator, validation_iterator, test_iterator
 
 
 def parse_function_training(example_proto):
@@ -87,7 +86,8 @@ def parse_function_training(example_proto):
     parsed_features = tf.parse_single_example(example_proto, features={
         'pointCloud': tf.FixedLenFeature([], tf.string),
         'joint': tf.FixedLenFeature([], tf.string),
-        'handScale': tf.FixedLenFeature([], tf.string)
+        'handScale': tf.FixedLenFeature([], tf.string),
+        'label': tf.FixedLenFeature([], tf.string)
         }, name='features')
 
     # Decode content into correct types
@@ -95,10 +95,11 @@ def parse_function_training(example_proto):
     points_dec = tf.reshape(points_dec, [6000, 3])
     joint_dec = tf.decode_raw(parsed_features['joint'], tf.float32)
     handScale_dec = tf.decode_raw(parsed_features['handScale'], tf.float32)
+    label_dec = tf.decode_raw(parsed_features['label'], tf.float32)
 
     # preprocess points
-    points_occluded_dec, points_clean_dec, joint_dec, handScale_dec, object_dec, depthimage_dec = tf.py_func(preprocessPoint_training, [points_dec, joint_dec, handScale_dec], [tf.float32, tf.float32, tf.float32, tf.float32, tf.float32, tf.float32])
-    return points_occluded_dec, points_clean_dec, joint_dec, handScale_dec, object_dec, depthimage_dec
+    points_occluded_dec, points_clean_dec, joint_dec, handScale_dec, object_dec, depthimage_dec, label_dec = tf.py_func(preprocessPoint_training, [points_dec, joint_dec, handScale_dec, label_dec], [tf.float32, tf.float32, tf.float32, tf.float32, tf.float32, tf.float32, tf.float32])
+    return points_occluded_dec, points_clean_dec, joint_dec, handScale_dec, object_dec, depthimage_dec, label_dec
 
 
 def parse_function_validation(example_proto):
@@ -107,7 +108,8 @@ def parse_function_validation(example_proto):
     parsed_features = tf.parse_single_example(example_proto, features={
         'pointCloud': tf.FixedLenFeature([], tf.string),
         'joint': tf.FixedLenFeature([], tf.string),
-        'handScale': tf.FixedLenFeature([], tf.string)
+        'handScale': tf.FixedLenFeature([], tf.string),
+        'label': tf.FixedLenFeature([], tf.string)
         }, name='features')
 
     # Decode content into correct types
@@ -115,10 +117,11 @@ def parse_function_validation(example_proto):
     points_dec = tf.reshape(points_dec, [6000, 3])
     joint_dec = tf.decode_raw(parsed_features['joint'], tf.float32)
     handScale_dec = tf.decode_raw(parsed_features['handScale'], tf.float32)
+    label_dec = tf.decode_raw(parsed_features['label'], tf.float32)
 
     # preprocess points
-    points_occluded_dec, points_clean_dec, joint_dec, handScale_dec, object_dec, depthimage_dec = tf.py_func(preprocessPoint_validation, [points_dec, joint_dec, handScale_dec], [tf.float32, tf.float32, tf.float32, tf.float32, tf.float32, tf.float32])
-    return points_occluded_dec, points_clean_dec, joint_dec, handScale_dec, object_dec, depthimage_dec
+    points_occluded_dec, points_clean_dec, joint_dec, handScale_dec, object_dec, depthimage_dec, label_dec = tf.py_func(preprocessPoint_validation, [points_dec, joint_dec, handScale_dec, label_dec], [tf.float32, tf.float32, tf.float32, tf.float32, tf.float32, tf.float32, tf.float32])
+    return points_occluded_dec, points_clean_dec, joint_dec, handScale_dec, object_dec, depthimage_dec, label_dec
 
 
 def parse_function_test(example_proto):
@@ -127,7 +130,8 @@ def parse_function_test(example_proto):
     parsed_features = tf.parse_single_example(example_proto, features={
         'pointCloud': tf.FixedLenFeature([], tf.string),
         'joint': tf.FixedLenFeature([], tf.string),
-        'handScale': tf.FixedLenFeature([], tf.string)
+        'handScale': tf.FixedLenFeature([], tf.string),
+        'label': tf.FixedLenFeature([], tf.string)
         }, name='features')
 
     # Decode content into correct types
@@ -135,9 +139,10 @@ def parse_function_test(example_proto):
     points_dec = tf.reshape(points_dec, [6000, 3])
     joint_dec = tf.decode_raw(parsed_features['joint'], tf.float32)
     handScale_dec = tf.decode_raw(parsed_features['handScale'], tf.float32)
+    label_dec = tf.decode_raw(parsed_features['label'], tf.float32)
 
     # preprocess points
     points_occluded_dec, joint_dec = tf.py_func(preprocessPoint_test, [points_dec, joint_dec], [tf.float32, tf.float32])
-    return points_occluded_dec, tf.zeros([INPUT_POINT_SIZE, 3], dtype=tf.float32), joint_dec, handScale_dec, tf.zeros([INPUT_POINT_SIZE, 3], dtype=tf.float32), tf.zeros([80, 80], dtype=tf.float32)
+    return points_occluded_dec, tf.zeros([INPUT_POINT_SIZE, 3], dtype=tf.float32), joint_dec, handScale_dec, tf.zeros([INPUT_POINT_SIZE, 3], dtype=tf.float32), tf.zeros([80, 80], dtype=tf.float32), tf.ones([1], dtype=tf.float32) # when test, the "while" module should be skipped
 
 
