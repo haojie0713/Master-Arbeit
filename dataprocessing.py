@@ -180,8 +180,8 @@ def augmentation(points, joints):
     for i in range(occluded_pcd.shape[0]):
         x_index = int(occluded_pcd[i, 0])
         y_index = int(occluded_pcd[i, 1])
-        if occluded_pcd[i, 2] < depth_image[x_index, y_index]:
-            depth_image[x_index, y_index] = occluded_pcd[i, 2]
+        if occluded_pcd[i, 2] < depth_image[y_index, x_index]:
+            depth_image[y_index, x_index] = occluded_pcd[i, 2]
 
     # projection to point cloud
     a, b = np.meshgrid(np.arange(0, 80), np.arange(0, 80))
@@ -192,7 +192,7 @@ def augmentation(points, joints):
     points_augmented[0, :] = (u + 0.5 - offset) * d / f_x
     points_augmented[1, :] = (v + 0.5 - offset) * d / f_y
     points_augmented[2, :] = d
-    points_augmented = points_augmented.T
+    points_augmented = points_augmented.T - np.array([0, 0, 19])
     # for u in range(80):
     #     for v in range(80):
     #         if depth_image[u, v] != np.inf:
@@ -202,7 +202,7 @@ def augmentation(points, joints):
     #             points_augmented = np.concatenate((points_augmented, np.array([[x, y, z]])))
     validIndicies = np.logical_and(np.logical_and(np.abs(points_augmented[:, 0]) < boundingBoxSize, np.abs(points_augmented[:, 1]) < boundingBoxSize), np.abs(points_augmented[:, 2]) < boundingBoxSize)
     points_augmented = points_augmented[validIndicies, :]  # remove np.inf
-    points_augmented -= np.array([0, 0, 19])
+
     return points_augmented, object_points, depth_image
 
 

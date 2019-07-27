@@ -17,15 +17,15 @@ def parse_args():
 
     parser.add_argument('--learning_rate', type=float, default=0.0001, help='Initial learning rate.')
 
-    parser.add_argument('--batch_size', type=int, default=10, help='Batch size.')
+    parser.add_argument('--batch_size', type=int, default=7, help='Batch size.')
 
-    parser.add_argument('--start_step', type=int, default=0, help='Training step to start with.')
+    parser.add_argument('--start_step', type=int, default=19001, help='Training step to start with.')
 
     parser.add_argument('--max_step', type=int, default=180000000000, help='Number of steps to run trainer.')
 
     parser.add_argument('--data_dir', type=str, default='/home/haojie/Desktop/MyCode/dataset/', help='Directory where the dataset lies.')
 
-    parser.add_argument('--train_size', type=int, default=949984, help='Training data size (number of images).')
+    parser.add_argument('--train_size', type=int, default=92302, help='Training data size (number of images).')
 
     parser.add_argument('--validation_size', type=int, default=6400, help='Validation data size (number of images).')
 
@@ -145,7 +145,7 @@ def main(_):
             # saver1 = tf.train.Saver(var_list=vars_filter, max_to_keep=2)
             # saver1.restore(sess, checkpoint_file)
 
-            checkpoint_file = '/home/haojie/Desktop/MyCode/log/model.ckpt-3887000'
+            checkpoint_file = '/home/haojie/Desktop/MyCode/log/SynthHand/model.ckpt-19000'
             saver.restore(sess, checkpoint_file)
 
             # print('**INFERENCE ==> VALIDATION**')

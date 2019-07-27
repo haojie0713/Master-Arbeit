@@ -78,7 +78,7 @@ def loss_net_point_reconstruction1(points_out, points_clean, label):
     Modified by Charles R. Qi
     """
     if tf.reduce_sum(label) == 0:
-        loss = 0
+        loss = 1e-10
     else:
         match = approx_match(points_out, points_clean)
         loss = tf.reduce_sum(match_cost(points_out, points_clean, match, label))/tf.reduce_sum(label)/OUTPUT_POINT_SIZE
@@ -93,7 +93,7 @@ def loss_net_point_reconstruction2(points_out, points_clean, label):
     Modified by Charles R. Qi
     """
     if tf.reduce_sum(label) == 0:
-        loss = 0
+        loss = 1e-10
     else:
         dist1, _, dist2, _ = nn_distance(points_out, points_clean)
         dist1 = tf.multiply(tf.reduce_sum(dist1, axis=1), tf.squeeze(label))
