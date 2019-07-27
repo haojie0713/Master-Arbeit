@@ -15,11 +15,11 @@ def parse_args():
     desc = "Tensorflow implementation of 'Augmented Autoencoder'"
     parser = argparse.ArgumentParser(description=desc)
 
-    parser.add_argument('--learning_rate', type=float, default=0.00001, help='Initial learning rate.')
+    parser.add_argument('--learning_rate', type=float, default=0.0001, help='Initial learning rate.')
 
     parser.add_argument('--batch_size', type=int, default=10, help='Batch size.')
 
-    parser.add_argument('--start_step', type=int, default=4263001, help='Training step to start with.')
+    parser.add_argument('--start_step', type=int, default=0, help='Training step to start with.')
 
     parser.add_argument('--max_step', type=int, default=180000000000, help='Number of steps to run trainer.')
 
@@ -31,7 +31,7 @@ def parse_args():
 
     parser.add_argument('--test_size', type=int, default=1000, help='Validation data size (number of images).')  #101641
 
-    parser.add_argument('--log_dir', type=str, default='/home/haojie/Desktop/MyCode/log', help='Directory to put the log data.')
+    parser.add_argument('--log_dir', type=str, default='/home/haojie/Desktop/MyCode/log/SynthHand', help='Directory to put the log data.')
 
     parser.add_argument('--log_frequency', type=int, default=1000, help='Frequency (steps) with which data is logged')
 
@@ -51,10 +51,6 @@ def main(_):
     points_occluded, points_clean, joints, object, depth_image, label, training_iterator, validation_iterator, test_iterator = \
         create_datasets_boxnet(training_filenames, validation_filenames, test_filenames, handle, FLAGS.batch_size, 8, 3000)
 
-    while not any(label):    # insure there are clean hand samples in current batch
-        points_occluded, points_clean, joints, object, depth_image, label, training_iterator, validation_iterator, test_iterator = \
-            create_datasets_boxnet(training_filenames, validation_filenames, test_filenames, handle, FLAGS.batch_size, 8, 3000)
-
     latent_mean, latent_stddev, scores = encoder_rPEL(points_occluded, training_var) # !!!!!!!!!!!!!!!points_occluded => points_clean
 
     z = re_parameterization(latent_mean, latent_stddev, training_var)
@@ -63,8 +59,8 @@ def main(_):
     pose_out = decoder_pose(z, training_var)
 
     loss_kl = KL_divergence(latent_mean, latent_stddev, FLAGS.batch_size)
-    loss_point_reconstruction1 = loss_net_point_reconstruction1(points_out, points_clean, FLAGS.batch_size, label) # EM loss
-    loss_point_reconstruction2 = loss_net_point_reconstruction2(points_out, points_clean, FLAGS.batch_size, label) # Chamfer loss
+    loss_point_reconstruction1 = loss_net_point_reconstruction1(points_out, points_clean, label) # EM loss
+    loss_point_reconstruction2 = loss_net_point_reconstruction2(points_out, points_clean, label) # Chamfer loss
     loss_point_reconstruction = loss_point_reconstruction1+loss_point_reconstruction2
     tf.summary.scalar('loss point reconstruction', loss_point_reconstruction)
     loss_pose_estimation = loss_net_pose_estimation(pose_out, joints, FLAGS.batch_size)
@@ -149,7 +145,7 @@ def main(_):
             # saver1 = tf.train.Saver(var_list=vars_filter, max_to_keep=2)
             # saver1.restore(sess, checkpoint_file)
 
-            checkpoint_file = '/home/haojie/Desktop/MyCode/log/model.ckpt-4263000'
+            checkpoint_file = '/home/haojie/Desktop/MyCode/log/model.ckpt-3887000'
             saver.restore(sess, checkpoint_file)
 
             # print('**INFERENCE ==> VALIDATION**')
@@ -160,10 +156,10 @@ def main(_):
 
             # restore
             print('Model is being restored...')
-            checkpoint_file = '/home/haojie/Desktop/MyCode/log/model.ckpt-2693000'
+            checkpoint_file = '/home/haojie/Desktop/MyCode/log/model.ckpt-3887000'
             #################################################################################
             vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
-            vars_preweights = tf.contrib.framework.filter_variables(vars, exclude_patterns=['rPEL/FC_layer/outputlayer', 'FC_pose/hiddenlayer0', 'FdNt/FdNt0_0', 'FdNt/FdNt1_0'])
+            vars_preweights = tf.contrib.framework.filter_variables(vars, exclude_patterns=[])
             saver_preweight = tf.train.Saver(var_list=vars_preweights, max_to_keep=2)
             saver_preweight.restore(sess, checkpoint_file)
 

@@ -71,6 +71,7 @@ list_subject = os.listdir(dir_video)
 
 counter = 0
 for subject in list_subject:
+    # subject = 'Subject_5'
     dir_video_subject = dir_video+subject+'/'
     dir_pose_subject = dir_pose+subject+'/'
     list_action = os.listdir(dir_video_subject)
@@ -86,8 +87,8 @@ for subject in list_subject:
             num_frames = len(os.listdir(dir_video_seq))
             for i in range(num_frames):
                 frame = dir_video_seq + 'depth_{:04d}.png'.format(i)
-                img = np.array(Image.open(frame))
 
+                img = np.array(Image.open(frame))
                 skel_hom = np.concatenate([skeleton[i], np.ones([skeleton[i].shape[0], 1])], 1)
                 skel_camcoords = cam_extr.dot(skel_hom.transpose()).transpose()[:, :3].astype(np.float32)  # camera coordinates(N,3)
 
@@ -133,13 +134,16 @@ for subject in list_subject:
                 joints = np.matmul(skel_camcoords, rotMat) - center3Drot
 
                 # padding and cropping image
-                padSize = 900
-                img_pad = np.pad(img, ((padSize, padSize),(padSize, padSize)), 'constant')
-                us = int(cropStart[0]+padSize)
-                ue = int(cropEnd[0]+padSize)
-                vs = int(cropStart[1]+padSize)
-                ve = int(cropEnd[1]+padSize)
-                image = img_pad[vs:ve, us:ue]
+                padSize = 2000
+                img_pad = np.pad(img, ((padSize, padSize), (padSize, padSize)), 'constant')
+                us = int(np.floor(cropStart[0])+padSize)
+                ue = int(np.floor(cropEnd[0])+padSize)
+                vs = int(np.floor(cropStart[1])+padSize)
+                ve = int(np.floor(cropEnd[1])+padSize)
+
+                image = img_pad[vs:ve, us:ue].astype(np.float)
+                image[np.where(image == 0)] = np.inf
+
                 # project to 3D camera coordinates
                 a, b = np.meshgrid(np.arange(np.floor(cropStart[0]), np.floor(cropEnd[0])), np.arange(np.floor(cropStart[1]), np.floor(cropEnd[1])))
                 u = a.ravel(1)
@@ -155,6 +159,9 @@ for subject in list_subject:
                 points = points[points[:, 2] < center3D[2] + cropDepthPlus * 1.4]
                 points = points[points[:, 2] > center3D[2] - cropDepthPlus * 1.4]
                 points = np.matmul(points, rotMat) - center3Drot
+
+                validIndicies = np.logical_and(np.logical_and(np.abs(points[:, 0]) < 140, np.abs(points[:, 1]) < 140), np.abs(points[:, 2]) < 140)
+                points = points[validIndicies, :]
 
                 # sample points
                 if len(points) < 5000:

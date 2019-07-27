@@ -70,7 +70,7 @@ def preprocessPoint_training(points, joints, scales, label):
     #     points_augmented, object_points, depth_image = augmentation(points, joints)
     #     points_occluded = sample(points_augmented)
     #     object_points = sample(object_points)
-    return np.float32(points_occluded), np.float32(points_clean), np.float32(joints), np.float32(scales), np.float32(object_points), np.float32(depth_image), np.float32(label)
+    return np.float32(points_occluded), np.float32(points_clean), np.float32(joints), np.float32(scales), np.float32(object_points), np.float32(depth_image)
 
 
 def preprocessPoint_validation(points, joints, scales, label):
@@ -105,7 +105,7 @@ def preprocessPoint_validation(points, joints, scales, label):
     #     points_occluded = sample(points_augmented)
     #     object_points = sample(object_points)
 
-    return np.float32(points_occluded), np.float32(points_clean), np.float32(joints), np.float32(scales), np.float32(object_points), np.float32(depth_image), np.float32(label)
+    return np.float32(points_occluded), np.float32(points_clean), np.float32(joints), np.float32(scales), np.float32(object_points), np.float32(depth_image)
 
 
 def preprocessPoint_test(points, joints):

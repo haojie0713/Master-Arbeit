@@ -12,7 +12,7 @@ def bytes_feature(value):
 
 
 list_points = glob.glob('/home/haojie/Desktop/FirstPersonHand/points/*.npy')
-# print(len(list_points)) # 101641
+# print(len(list_points)) # 101937
 np.random.shuffle(list_points)
 counter = 0
 writer = tf.python_io.TFRecordWriter('/home/haojie/Desktop/FirstPersonHand_1')
@@ -29,6 +29,6 @@ for points in list_points:
     features = {'pointCloud': bytes_feature(points), 'joint': bytes_feature(joints), 'handScale': bytes_feature(np.array([1.0]).astype(np.float32))}
     example = tf.train.Example(features=tf.train.Features(feature=features))
     writer.write(example.SerializeToString())
-    if counter == 1000:
+    if counter == 2000:
         break
 writer.close()

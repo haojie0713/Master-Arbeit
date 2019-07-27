@@ -3,41 +3,12 @@ from dataprocessing import *
 
 
 def dataset_filenames(data_dir):
-    training_filenames = ["Hands2017TrainPointCloud_1",
-                          "Hands2017TrainPointCloud_2",
-                          "Hands2017TrainPointCloud_3",
-                          "Hands2017TrainPointCloud_4",
-                          "Hands2017TrainPointCloud_5",
-                          "Hands2017TrainPointCloud_6",
-                          "Hands2017TrainPointCloud_7",
-                          "Hands2017TrainPointCloud_8",
-                          "Hands2017TrainPointCloud_9",
-                          "Hands2017TrainPointCloud_10",
-                          "Hands2017TrainPointCloud_11",
-                          "Hands2017TrainPointCloud_12",
-                          "Hands2017TrainPointCloud_13",
-                          "Hands2017TrainPointCloud_14",
-                          "Hands2017TrainPointCloud_15",
-                          "Hands2017TrainPointCloud_16",
-                          "Hands2017TrainPointCloud_17",
-                          "Hands2017TrainPointCloud_18",
-                          "Hands2017TrainPointCloud_19",
-                          "Hands2017TrainPointCloud_20",
-                          "Hands2017TrainPointCloud_21",
-                          "Hands2017TrainPointCloud_22",
-                          "Hands2017TrainPointCloud_23",
-                          "Hands2017TrainPointCloud_24",
-                          "Hands2017TrainPointCloud_25",
-                          "Hands2017TrainPointCloud_26",
-                          "Hands2017TrainPointCloud_27",
-                          "Hands2017TrainPointCloud_28",
-                          "Hands2017TrainPointCloud_29",
-                          "Hands2017TrainPointCloud_30",
-                          "Hands2017TrainPointCloud_31",
-                          "Hands2017TrainPointCloud_32"
-                          ]
-    validation_filenames = ["Hands2017TrainPointCloud_31"]
-    test_filenames = ["HandObject"]
+    training_filenames = ["SynthHand_training_1",
+                          "SynthHand_training_2",
+                          "SynthHand_training_3",
+                          "SynthHand_training_4"]
+    validation_filenames = ["SynthHand_test_1"]
+    test_filenames = ["SynthHand_test_2"]
     # test_filenames = ["FirstPersonHand_1",
     #                   "FirstPersonHand_2",
     #                   "FirstPersonHand_3",
@@ -98,7 +69,7 @@ def parse_function_training(example_proto):
     label_dec = tf.decode_raw(parsed_features['label'], tf.float32)
 
     # preprocess points
-    points_occluded_dec, points_clean_dec, joint_dec, handScale_dec, object_dec, depthimage_dec, label_dec = tf.py_func(preprocessPoint_training, [points_dec, joint_dec, handScale_dec, label_dec], [tf.float32, tf.float32, tf.float32, tf.float32, tf.float32, tf.float32, tf.float32])
+    points_occluded_dec, points_clean_dec, joint_dec, handScale_dec, object_dec, depthimage_dec = tf.py_func(preprocessPoint_training, [points_dec, joint_dec, handScale_dec, label_dec], [tf.float32, tf.float32, tf.float32, tf.float32, tf.float32, tf.float32])
     return points_occluded_dec, points_clean_dec, joint_dec, handScale_dec, object_dec, depthimage_dec, label_dec
 
 
@@ -120,7 +91,7 @@ def parse_function_validation(example_proto):
     label_dec = tf.decode_raw(parsed_features['label'], tf.float32)
 
     # preprocess points
-    points_occluded_dec, points_clean_dec, joint_dec, handScale_dec, object_dec, depthimage_dec, label_dec = tf.py_func(preprocessPoint_validation, [points_dec, joint_dec, handScale_dec, label_dec], [tf.float32, tf.float32, tf.float32, tf.float32, tf.float32, tf.float32, tf.float32])
+    points_occluded_dec, points_clean_dec, joint_dec, handScale_dec, object_dec, depthimage_dec = tf.py_func(preprocessPoint_validation, [points_dec, joint_dec, handScale_dec, label_dec], [tf.float32, tf.float32, tf.float32, tf.float32, tf.float32, tf.float32])
     return points_occluded_dec, points_clean_dec, joint_dec, handScale_dec, object_dec, depthimage_dec, label_dec
 
 
@@ -143,6 +114,6 @@ def parse_function_test(example_proto):
 
     # preprocess points
     points_occluded_dec, joint_dec = tf.py_func(preprocessPoint_test, [points_dec, joint_dec], [tf.float32, tf.float32])
-    return points_occluded_dec, tf.zeros([INPUT_POINT_SIZE, 3], dtype=tf.float32), joint_dec, handScale_dec, tf.zeros([INPUT_POINT_SIZE, 3], dtype=tf.float32), tf.zeros([80, 80], dtype=tf.float32), tf.ones([1], dtype=tf.float32) # when test, the "while" module should be skipped
+    return points_occluded_dec, tf.zeros([INPUT_POINT_SIZE, 3], dtype=tf.float32), joint_dec, handScale_dec, tf.zeros([INPUT_POINT_SIZE, 3], dtype=tf.float32), tf.zeros([80, 80], dtype=tf.float32), label_dec
 
 
