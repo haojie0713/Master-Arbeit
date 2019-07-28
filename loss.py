@@ -77,11 +77,13 @@ def loss_net_point_reconstruction1(points_out, points_clean, label):
     Original author: Haoqiang Fan
     Modified by Charles R. Qi
     """
-    if tf.reduce_sum(label) == 0:
-        loss = 1e-10
-    else:
-        match = approx_match(points_out, points_clean)
-        loss = tf.reduce_sum(match_cost(points_out, points_clean, match, label))/tf.reduce_sum(label)/OUTPUT_POINT_SIZE
+    match = approx_match(points_out, points_clean)
+    loss = tf.cond(tf.reduce_sum(label)>tf.constant(0, dtype=tf.float32), lambda: tf.reduce_sum(match_cost(points_out, points_clean, match, label))/tf.reduce_sum(label)/OUTPUT_POINT_SIZE, lambda: 1e-10)
+    # if tf.reduce_sum(label) == 0:   # writing in this way is completely wrong
+    #     loss = 1e-10
+    # else:
+    #     match = approx_match(points_out, points_clean)
+    #     loss = tf.reduce_sum(match_cost(points_out, points_clean, match, label))/tf.reduce_sum(label)/OUTPUT_POINT_SIZE
     tf.summary.scalar('loss point reconstruction (EMD)', loss)
     return loss  # Earth Mover Distance (point euclidean loss)
 
@@ -92,13 +94,17 @@ def loss_net_point_reconstruction2(points_out, points_clean, label):
     Original author: Haoqiang Fan.
     Modified by Charles R. Qi
     """
-    if tf.reduce_sum(label) == 0:
-        loss = 1e-10
-    else:
-        dist1, _, dist2, _ = nn_distance(points_out, points_clean)
-        dist1 = tf.multiply(tf.reduce_sum(dist1, axis=1), tf.squeeze(label))
-        dist2 = tf.multiply(tf.reduce_sum(dist2, axis=1), tf.squeeze(label))
-        loss = (tf.reduce_sum(dist1)+tf.reduce_sum(dist2))/tf.reduce_sum(label)/OUTPUT_POINT_SIZE
+    dist1, _, dist2, _ = nn_distance(points_out, points_clean)
+    dist1 = tf.multiply(tf.reduce_sum(dist1, axis=1), tf.squeeze(label))
+    dist2 = tf.multiply(tf.reduce_sum(dist2, axis=1), tf.squeeze(label))
+    loss = tf.cond(tf.reduce_sum(label)>tf.constant(0, dtype=tf.float32), lambda: (tf.reduce_sum(dist1)+tf.reduce_sum(dist2))/tf.reduce_sum(label)/OUTPUT_POINT_SIZE, lambda: 1e-10)
+    # if tf.reduce_sum(label) == 0:    # wrong way
+    #     loss = 1e-10
+    # else:
+    #     dist1, _, dist2, _ = nn_distance(points_out, points_clean)
+    #     dist1 = tf.multiply(tf.reduce_sum(dist1, axis=1), tf.squeeze(label))
+    #     dist2 = tf.multiply(tf.reduce_sum(dist2, axis=1), tf.squeeze(label))
+    #     loss = (tf.reduce_sum(dist1)+tf.reduce_sum(dist2))/tf.reduce_sum(label)/OUTPUT_POINT_SIZE
     tf.summary.scalar('loss point reconstruction (CD)', loss)
     return loss  # Chamfer Distance (point euclidean loss)
 
